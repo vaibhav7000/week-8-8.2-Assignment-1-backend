@@ -1,5 +1,6 @@
 const { User } = require("../db/database.js");
-const {userValidatorSignUp, userValidatorSignIn} =  require("../utils/validators.js");
+const jwt = require("jsonwebtoken");
+const {userValidatorSignUp, userValidatorSignIn, userValidatorOptional} =  require("../utils/validators.js");
 
 function userSchemaValidatorSignUp(req, res, next) {
     const result = userValidatorSignUp.safeParse({
@@ -76,7 +77,73 @@ async function userExistInDatabase(req, res, next) {
     }
 }
 
+function checkChangeFields(req, res, next) {
+    const result = userValidatorOptional.safeParse({
+        ...req.body,
+    })
+
+    if(!result.success) {
+        res.status(403).json({
+            msg: "Something up with your changing fields",
+            issues: result.error.issues
+        })
+        return
+    }
+
+    req.finalUser = result.data;
+    next()
+}
+
+// this middleware is used to authenticate routes which require a valid user to access the functionality
+async function authenticateUser(req, res, next) {
+    const authHeader = req.headers["Authorization"];
+
+    if(!authHeader || authHeader.startsWith("Bearer ")) {
+        res.status(403).json({
+            msg: "Not authenticated to access the route"
+        })
+        return;
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    if(!token) {
+        res.status(403).json({
+            msg: "Not authenticated to access the route"
+        })
+        return
+    }
+
+    try {
+        // validate the jwt token
+        const decodeToken = jwt.verify(token,process.env.jwt_PASSWORD);
+
+        if(!decodeToken.userId) {
+            res.status(403).json({
+                msg: "Invalid token"
+            })
+            return;
+        }
+        req.userId = decodeToken.userId;
+        next();
+    } catch (error) {
+        if (error.name === 'TokenExpiredError') {
+            res.status(403).json({
+                msg: "Token has expired"
+            });
+        } else if (error.name === 'JsonWebTokenError') {
+            res.status(403).json({
+                msg: "Invalid token"
+            });
+        } else {
+            res.status(403).json({
+                msg: error.message,
+            });
+        }
+    }
+}
+
 
 module.exports = {
-    userSchemaValidatorSignUp, checkUserNameInDatabase, userSchemaValidatorSignIn, userExistInDatabase
+    userSchemaValidatorSignUp, checkUserNameInDatabase, userSchemaValidatorSignIn, userExistInDatabase, authenticateUser, checkChangeFields
 }

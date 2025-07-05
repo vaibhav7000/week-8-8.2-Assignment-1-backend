@@ -1,10 +1,62 @@
-const { Router } = require("express");
+const { Router, response } = require("express");
 const router = Router();
 const jwt = require("jsonwebtoken");
-const {userSchemaValidatorSignUp, checkUserNameInDatabase, userSchemaValidatorSignIn, userExistInDatabase} = require("../middlewares/user.js");
+const {userSchemaValidatorSignUp, checkUserNameInDatabase, userSchemaValidatorSignIn, userExistInDatabase, authenticateUser, checkChangeFields} = require("../middlewares/user.js");
 const { User } = require("../db/database.js");
 
 // all-user-related queriies like sigin signup change password
+
+router.put("/", authenticateUser, checkChangeFields, async (req, res, next) => {
+    const userId = req.userId;
+
+    try {
+        const response = await User.findByIdAndUpdate(userId, {
+            ...req.finalUser,
+        }, {
+            runValidators: true, 
+            new :true
+        })
+        
+        res.status(200).json({
+            msg: "Upadated successfully",
+            response
+        })
+    } catch (error) {
+        next(error);
+    }
+})
+
+router.get("/bulk", authenticateUser, async (req, res, next) => {
+    const filter = req.query.filter;
+    const userId = req.userId;
+
+    try {   
+        // this we are build a query and doing LIKE queries (just like doing on sql databases)
+        const response = await User.find().or([{
+            firstName: new RegExp(filter, 'i')
+        }, {
+            lastName: new RegExp(filter, 'i')
+        }])
+
+        // do not send user password and the current user that make the request
+        const users = response.filter(user => {
+            if(user._id.equals(userId)) {
+                return {
+                    username: user.username,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    _id: user._id
+                }
+            }
+        })
+
+        res.status(200).json({
+            users
+        })
+    } catch (error) {
+        next(error);
+    }
+})
 
 
 router.post("/signup", userSchemaValidatorSignUp, checkUserNameInDatabase, async function (req, res, next) {

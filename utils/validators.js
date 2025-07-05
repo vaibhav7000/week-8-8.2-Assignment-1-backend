@@ -12,7 +12,13 @@ const userValidatorSignIn = z.object({
     password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/)
 })
 
+const userValidatorOptional = z.object({
+    firstName: z.string().trim().min(8).max(50).optional(),
+    lastName: z.string().trim().min(8).max(50).optional(),
+    password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/).optional(),
+})
+
 
 module.exports = {
-    userValidatorSignUp, userValidatorSignIn
+    userValidatorSignUp, userValidatorSignIn, userValidatorOptional
 }
