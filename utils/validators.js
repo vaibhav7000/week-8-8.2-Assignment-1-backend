@@ -18,7 +18,12 @@ const userValidatorOptional = z.object({
     password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/).optional(),
 })
 
+const transferValidation = z.object({
+    amount: z.number(),
+    sendTo: z.string(),
+})
+
 
 module.exports = {
-    userValidatorSignUp, userValidatorSignIn, userValidatorOptional
+    userValidatorSignUp, userValidatorSignIn, userValidatorOptional, transferValidation
 }
