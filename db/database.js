@@ -13,6 +13,7 @@ async function connectionWithDatabase() {
 
 // we have added contraints so that if one of the following fails mongoDB / mongoose will not add data in the corresponding collection and throw error
 const userSchema = new mongoose.Schema({
+    // username is email
     username: {
         type: String,
         required: true,
@@ -25,12 +26,14 @@ const userSchema = new mongoose.Schema({
     firstName: {
         type: String,
         required: true,
-        minLength: 8
+        minLength: 8,
+        maxLength: 50
     },
     lastName: {
         type: String,
         required: true,
         trim: true,
+        minLength: 8,
         maxLength: 50
     }, 
     password: {
@@ -46,6 +49,6 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 
 module.exports = {
-    connectionWithDatabase,
+    connectionWithDatabase, User
 
 }
