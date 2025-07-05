@@ -2,7 +2,7 @@ const { Router, response } = require("express");
 const router = Router();
 const jwt = require("jsonwebtoken");
 const {userSchemaValidatorSignUp, checkUserNameInDatabase, userSchemaValidatorSignIn, userExistInDatabase, authenticateUser, checkChangeFields} = require("../middlewares/user.js");
-const { User } = require("../db/database.js");
+const { User, Wallet } = require("../db/database.js");
 
 // all-user-related queriies like sigin signup change password
 
@@ -27,7 +27,7 @@ router.put("/", authenticateUser, checkChangeFields, async (req, res, next) => {
 })
 
 router.get("/bulk", authenticateUser, async (req, res, next) => {
-    const filter = req.query.filter;
+    const filter = req.query.filter || "";
     const userId = req.userId;
 
     try {   
@@ -72,10 +72,22 @@ router.post("/signup", userSchemaValidatorSignUp, checkUserNameInDatabase, async
             userId: response._id
         }, process.env.jwt_PASSWORD);
 
-        res.status(201).json({
-            token,
-            msg: "user successfully created"
-        })
+        // creating wallet for the given user
+        try {
+            const wallet = new Wallet({
+                userId: response._id,
+                balance: 1 + Math.random()*9999,
+            })
+
+            const resposne2 = await wallet.save();
+
+            res.status(201).json({
+                token,
+                msg: "user successfully created"
+            })
+        } catch (error) {
+            next(error);
+        }
     } catch (error) {
         next(error);
     }
