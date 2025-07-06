@@ -96,17 +96,16 @@ function checkChangeFields(req, res, next) {
 
 // this middleware is used to authenticate routes which require a valid user to access the functionality
 async function authenticateUser(req, res, next) {
-    const authHeader = req.headers["Authorization"];
+    const authHeader = req.headers["authorization"];
 
-    if(!authHeader || authHeader.startsWith("Bearer ")) {
+    if(!authHeader || !authHeader.startsWith("Bearer ")) {
         res.status(403).json({
             msg: "Not authenticated to access the route"
         })
         return;
     }
 
-    const token = authHeader.split(' ')[1];
-
+    const token = authHeader.split(' ')[1]; 
     if(!token) {
         res.status(403).json({
             msg: "Not authenticated to access the route"
@@ -125,6 +124,10 @@ async function authenticateUser(req, res, next) {
             return;
         }
         req.userId = decodeToken.userId;
+        req.userDetails = {
+            firstName: decodeToken.firstName,
+            lastName: decodeToken.lastName
+        }
         next();
     } catch (error) {
         if (error.name === 'TokenExpiredError') {

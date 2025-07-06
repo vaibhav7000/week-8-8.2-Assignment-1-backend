@@ -26,6 +26,33 @@ router.put("/", authenticateUser, checkChangeFields, async (req, res, next) => {
     }
 })
 
+router.post("/userdetails", authenticateUser, async function getBalance(req, res, next) {
+    const userId = req.userId;
+
+    try {
+        const resposne = await Wallet.findOne({
+            userId
+        })
+
+        const balance = resposne.balance;
+
+        req.userDetails.balance = balance;
+
+        next();
+    } catch(error) {
+        next(error);
+    }
+} ,(req, res, next) => {
+    const {firstName, lastName, balance} = req.userDetails;
+    res.status(200).json({
+        msg: "Authentication successfull",
+        userId: req.userId,
+        firstName, 
+        lastName,
+        balance
+    })
+})
+
 router.get("/bulk", authenticateUser, async (req, res, next) => {
     const filter = req.query.filter || "";
     const userId = req.userId;
@@ -40,7 +67,7 @@ router.get("/bulk", authenticateUser, async (req, res, next) => {
 
         // do not send user password and the current user that make the request
         const users = response.filter(user => {
-            if(user._id.equals(userId)) {
+            if(!user._id.equals(userId)) {
                 return {
                     username: user.username,
                     firstName: user.firstName,
@@ -69,21 +96,27 @@ router.post("/signup", userSchemaValidatorSignUp, checkUserNameInDatabase, async
         const response = await finalUser.save();
         // provide jwt
         const token = jwt.sign({
-            userId: response._id
+            userId: response._id,
+            firstName: response.firstName,
+            lastName: response.lastName,
         }, process.env.jwt_PASSWORD);
 
         // creating wallet for the given user
         try {
             const wallet = new Wallet({
                 userId: response._id,
-                balance: 1 + Math.random()*9999,
+                balance: Math.floor(1 + Math.random()*9999),
             })
 
             const resposne2 = await wallet.save();
 
             res.status(201).json({
                 token,
-                msg: "user successfully created"
+                msg: "user successfully created",
+                userId: response._id,
+                firstName: response.firstName,
+                lastName: response.lastName,
+                balance: resposne2.balance
             })
         } catch (error) {
             next(error);

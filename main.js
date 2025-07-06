@@ -34,6 +34,7 @@ app.use("/api/v1" , mainRouter);
 // global catch
 app.use(function(error, req, res, next) {
     if(error) {
+        console.log(error);
         res.status(500).json({
             msg: "Interval server error"
         })
