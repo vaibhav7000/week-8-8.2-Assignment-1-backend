@@ -63,19 +63,21 @@ router.post("/transfer", authenticateUser, transcationValidator, async (req, res
             }
 
             // if we make any changes locally to the document that we recieve during a session we can directly update that to the collection
-            sender.amount -= amount;
-            reciever.amount += amount;
+            sender.balance -= amount;
+            reciever.balance += amount;
 
-            await sender.save({
+            const response = await sender.save({
                 session
             });
+
+            console.log(response);
             await reciever.save({
                 session
             });
 
             await session.commitTransaction();
 
-            session.endSession();
+            await session.endSession();
 
             res.status(200).json({
                 msg: "Transaction completed"
